@@ -1,0 +1,254 @@
+<Window x:Class="ImageViewer.SingleViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        mc:Ignorable="d"
+        Title="Vista Mia" Height="720" Width="640"
+        MinHeight="300" MinWidth="360"
+        Icon="pack://application:,,,/Resources/icon.ico"
+        Background="White"
+        WindowStartupLocation="CenterOwner"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="40" CornerRadius="0" GlassFrameThickness="0" ResizeBorderThickness="6"/>
+    </shell:WindowChrome.WindowChrome>
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF0067C0"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FF1A1A1A"/>
+        <SolidColorBrush x:Key="BorderBrush2" Color="#FFE3E3E3"/>
+        <SolidColorBrush x:Key="HoverBgBrush" Color="#FFF0F0F0"/>
+
+        <!-- Flat text+icon menu item (파일 / EXIF / HDR / 이미지 / 슬라이드 쇼 / 사진 보관함) -->
+        <Style x:Key="MenuItemButton" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBgBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Title-bar window control button (minimize / maximize / close) -->
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource CaptionButton}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFE81123"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Semi-transparent circular overlay button (prev/next/settings) -->
+        <Style x:Key="OverlayCircleButton" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Background" Value="#5E202020"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="Bg" Fill="{TemplateBinding Background}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Fill" Value="#9E202020"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar -->
+        <Grid Grid.Row="0" Background="White">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                <Image Source="pack://application:,,,/Resources/icon.ico" Width="16" Height="16"/>
+                <TextBlock x:Name="TitleText" Text="Vista Mia" Margin="8,0,0,0" FontSize="12"
+                           Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="MinimizeButton" Content="&#x2500;" Style="{StaticResource CaptionButton}" Click="MinimizeButton_Click"/>
+                <Button x:Name="MaximizeButton" Content="&#x25A1;" Style="{StaticResource CaptionButton}" Click="MaximizeButton_Click"/>
+                <Button x:Name="CloseButton" Content="&#x2715;" Style="{StaticResource CloseCaptionButton}" Click="CloseButton_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Flat menu bar -->
+        <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,1,0,1">
+            <StackPanel Orientation="Horizontal">
+                <ToggleButton x:Name="FileMenuButton" Style="{StaticResource MenuItemButton}" Click="FileMenuButton_Click">
+                    <TextBlock Text="파일"/>
+                </ToggleButton>
+                <ToggleButton x:Name="ExifMenuButton" Style="{StaticResource MenuItemButton}" Click="ExifMenuButton_Click">
+                    <TextBlock Text="EXIF"/>
+                </ToggleButton>
+                <ToggleButton x:Name="HdrToggleButton" Style="{StaticResource MenuItemButton}" Click="HdrToggleButton_Click">
+                    <TextBlock Text="HDR"/>
+                </ToggleButton>
+                <ToggleButton x:Name="ImageMenuButton" Style="{StaticResource MenuItemButton}" Click="ImageMenuButton_Click">
+                    <TextBlock Text="이미지"/>
+                </ToggleButton>
+                <ToggleButton x:Name="SlideshowButton" Style="{StaticResource MenuItemButton}" Click="SlideshowButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="SlideshowIcon" Text="&#x25B6;" FontSize="10" Margin="0,0,6,0"/>
+                        <TextBlock x:Name="SlideshowLabel" Text="슬라이드 쇼"/>
+                    </StackPanel>
+                </ToggleButton>
+                <ToggleButton x:Name="LibraryButton" Style="{StaticResource MenuItemButton}" Click="LibraryButton_Click">
+                    <TextBlock Text="사진 보관함"/>
+                </ToggleButton>
+            </StackPanel>
+        </Border>
+
+        <!-- Image canvas -->
+        <Grid Grid.Row="2" Background="White">
+            <ScrollViewer x:Name="PreviewScrollViewer"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          PreviewMouseWheel="PreviewScrollViewer_PreviewMouseWheel">
+                <Image x:Name="PreviewImage"
+                       Stretch="None"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+                       MouseLeftButtonUp="PreviewImage_MouseLeftButtonUp"
+                       MouseMove="PreviewImage_MouseMove">
+                    <Image.LayoutTransform>
+                        <TransformGroup>
+                            <ScaleTransform x:Name="PreviewScaleTransform" ScaleX="1" ScaleY="1"/>
+                            <RotateTransform x:Name="PreviewRotateTransform" Angle="0"/>
+                        </TransformGroup>
+                    </Image.LayoutTransform>
+                </Image>
+            </ScrollViewer>
+
+            <TextBlock x:Name="EmptyStateText"
+                       Text="이미지를 불러올 수 없습니다"
+                       Foreground="#FF707070" FontSize="14"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Visibility="Collapsed"/>
+
+            <!-- Floating settings button -->
+            <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,16,16,0">
+                <Button x:Name="SettingsButton" Content="&#x2699;" Style="{StaticResource OverlayCircleButton}"
+                        FontSize="18" ToolTip="설정" Click="SettingsButton_Click"/>
+                <Ellipse x:Name="SettingsBadge" Width="10" Height="10" Fill="#FFE81123"
+                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0"
+                         Visibility="Collapsed" IsHitTestVisible="False"/>
+            </Grid>
+
+            <!-- Prev/next navigation -->
+            <Button x:Name="PrevButton" Content="&#x2039;" Style="{StaticResource OverlayCircleButton}"
+                    ToolTip="이전 이미지" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0"
+                    Click="PrevButton_Click"/>
+            <Button x:Name="NextButton" Content="&#x203A;" Style="{StaticResource OverlayCircleButton}"
+                    ToolTip="다음 이미지" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0"
+                    Click="NextButton_Click"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10">
+                <Border Background="#DD202020" CornerRadius="4" Padding="8,4">
+                    <TextBlock x:Name="StatusText" Foreground="White" FontSize="12"/>
+                </Border>
+            </StackPanel>
+
+            <!-- EXIF flyout -->
+            <Border x:Name="ExifPanel" Visibility="Collapsed"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"
+                    Background="White" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1"
+                    CornerRadius="4" Padding="14" MaxWidth="320">
+                <StackPanel>
+                    <TextBlock Text="파일 정보" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="ExifText" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource TextBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Image (rotate) flyout -->
+            <Border x:Name="ImagePanel" Visibility="Collapsed"
+                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,10,0,0"
+                    Background="White" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1"
+                    CornerRadius="4" Padding="8">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="왼쪽으로 회전" Padding="10,6" Margin="2" Click="RotateLeftButton_Click"/>
+                    <Button Content="오른쪽으로 회전" Padding="10,6" Margin="2" Click="RotateRightButton_Click"/>
+                    <Button Content="원본 크기 맞춤" Padding="10,6" Margin="2" Click="FitButton_Click"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Settings flyout -->
+            <Border x:Name="SettingsPanel" Visibility="Collapsed"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,70,16,0"
+                    Background="White" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1"
+                    CornerRadius="4" Padding="14" Width="220">
+                <StackPanel>
+                    <TextBlock Text="설정" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="슬라이드 쇼 간격(초)" FontSize="12" Margin="0,0,0,4"/>
+                    <Slider x:Name="SlideshowIntervalSlider" Minimum="1" Maximum="10" Value="3"
+                            TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SlideshowIntervalSlider_ValueChanged"/>
+                    <TextBlock x:Name="SlideshowIntervalText" Text="3초" FontSize="11" Foreground="#FF707070" HorizontalAlignment="Right"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

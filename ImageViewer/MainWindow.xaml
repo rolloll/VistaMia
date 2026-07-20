@@ -1,0 +1,262 @@
+<Window x:Class="ImageViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ImageViewer"
+        mc:Ignorable="d"
+        Title="Vista Mia" Height="800" Width="1280"
+        Icon="pack://application:,,,/Resources/icon.ico"
+        Background="#FFF3F3F3"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <SolidColorBrush x:Key="AccentBrush" Color="#FF0067C0"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#FF1975C8"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#FF1A1A1A"/>
+        <SolidColorBrush x:Key="BorderBrush2" Color="#FFCFCFCF"/>
+        <SolidColorBrush x:Key="SelectedBgBrush" Color="#FFD6E9FB"/>
+        <SolidColorBrush x:Key="HoverBgBrush" Color="#FFF0F0F0"/>
+
+        <!-- Accent button (열기 / 찾아보기) -->
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextBrush}"/>
+        </Style>
+
+        <Style TargetType="TreeView">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style TargetType="TreeViewItem">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Padding" Value="2"/>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush2}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" BorderBrush="Transparent" BorderThickness="2" CornerRadius="4" Margin="3" Padding="2">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBgBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SelectedBgBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Flat icon-glyph toolbar button (folder-tree toggle, etc.) -->
+        <Style x:Key="IconToolButton" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource HoverBgBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource SelectedBgBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Semi-transparent circular prev/next overlay button on the preview canvas -->
+        <Style x:Key="NavCircleButton" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Background" Value="#5E202020"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="Bg" Fill="{TemplateBinding Background}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Fill" Value="#9E202020"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top toolbar -->
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="0,0,0,1" Padding="10,8">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="ToggleTreeButton" Content="&#xE700;" Style="{StaticResource IconToolButton}"
+                        ToolTip="폴더 트리 접기/펼치기" Margin="0,0,10,0" Click="ToggleTreeButton_Click"/>
+                <TextBlock Text="폴더:" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                <TextBox x:Name="PathTextBox" Width="560" VerticalAlignment="Center"
+                         KeyDown="PathTextBox_KeyDown"/>
+                <Button x:Name="OpenFolderButton" Content="열기" Style="{StaticResource AccentButton}" Margin="8,0,0,0" Click="OpenFolderButton_Click"/>
+                <Button x:Name="BrowseFolderButton" Content="찾아보기..." Style="{StaticResource AccentButton}" Margin="8,0,0,0" Click="BrowseFolderButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="FolderTreeColumn" Width="230"/>
+                <ColumnDefinition x:Name="FolderTreeSplitterColumn" Width="4"/>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Folder tree -->
+            <TreeView x:Name="FolderTree"
+                      Grid.Column="0"
+                      SelectedItemChanged="FolderTree_SelectedItemChanged"/>
+
+            <GridSplitter x:Name="FolderTreeSplitter" Grid.Column="1" Width="4" HorizontalAlignment="Stretch" Background="{StaticResource BorderBrush2}"/>
+
+            <!-- Thumbnail list -->
+            <ListBox x:Name="ThumbnailList"
+                     Grid.Column="2"
+                     SelectionChanged="ThumbnailList_SelectionChanged"
+                     MouseDoubleClick="ThumbnailList_MouseDoubleClick"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Vertical" Width="185">
+                            <Border Background="#FFF7F7F7" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Height="130">
+                                <Image Source="{Binding Thumbnail}" Stretch="Uniform" Margin="2"/>
+                            </Border>
+                            <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextBrush}" FontSize="11" Margin="0,4,0,2"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Stretch" Background="{StaticResource BorderBrush2}"/>
+
+            <!-- Large preview -->
+            <Border Grid.Column="4" Background="#FFE9E9E9">
+                <Grid>
+                    <ScrollViewer x:Name="PreviewScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  PreviewMouseWheel="PreviewScrollViewer_PreviewMouseWheel">
+                        <Image x:Name="PreviewImage"
+                               Stretch="None"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+                               MouseLeftButtonUp="PreviewImage_MouseLeftButtonUp"
+                               MouseMove="PreviewImage_MouseMove">
+                            <Image.LayoutTransform>
+                                <ScaleTransform x:Name="PreviewScaleTransform" ScaleX="1" ScaleY="1"/>
+                            </Image.LayoutTransform>
+                        </Image>
+                    </ScrollViewer>
+
+                    <TextBlock x:Name="EmptyStateText"
+                               Text="폴더를 선택하면 이미지가 여기에 표시됩니다"
+                               Foreground="#FF707070"
+                               FontSize="14"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                    <!-- Mouse-driven prev/next navigation, overlaid on the preview canvas -->
+                    <Button x:Name="PrevImageButton" Content="&#x2039;" Style="{StaticResource NavCircleButton}"
+                            ToolTip="이전 이미지" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0"
+                            Click="PrevImageButton_Click"/>
+                    <Button x:Name="NextImageButton" Content="&#x203A;" Style="{StaticResource NavCircleButton}"
+                            ToolTip="다음 이미지" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0"
+                            Click="NextImageButton_Click"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10">
+                        <Border Background="#DD202020" CornerRadius="4" Padding="8,4">
+                            <TextBlock x:Name="StatusText" Foreground="White" FontSize="12"/>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Bottom status bar -->
+        <Border Grid.Row="2" Background="{StaticResource AccentBrush}" Padding="10,4">
+            <TextBlock x:Name="BottomStatusText" Foreground="White" FontSize="11"
+                       Text="←/→ 또는 이전/다음 버튼: 이미지 이동   |   Ctrl+휠: 확대/축소   |   휠: 스크롤   |   드래그: 이동   |   0: 원본 크기 맞춤"/>
+        </Border>
+    </Grid>
+</Window>
