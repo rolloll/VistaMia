@@ -4,6 +4,12 @@ A lightweight Windows image viewer built with WPF (.NET 8), inspired by classic 
 BandiView. It handles everyday image formats plus two formats most viewers skip: **PSD**
 (Photoshop) and **CLIP** (Clip Studio Paint).
 
+## Download
+
+Grab the latest build from the [Releases page](https://github.com/rolloll/VistaMia/releases/latest):
+download `VistaMia-win-x64.zip`, extract it, and run `VistaMia.exe`. It's a self-contained build,
+so no .NET install is required.
+
 ## Features
 
 - **Folder explorer view**: drive/folder tree, thumbnail grid, and a large preview pane side by
@@ -54,6 +60,12 @@ dotnet build ImageViewer.sln
 ```
 
 The built executable is `ImageViewer/bin/Debug/net8.0-windows/VistaMia.exe`.
+
+To produce a self-contained single-file build (what's attached to each release):
+
+```
+dotnet publish ImageViewer -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+```
 
 ## Project structure
 
