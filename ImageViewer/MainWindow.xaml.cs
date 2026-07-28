@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private CancellationTokenSource? _thumbnailLoadCts;
     private int _currentIndex = -1;
     private readonly ImagePanZoomController _panZoom;
+    private string? _zoomFolderPath;
 
     public MainWindow() : this(null)
     {
@@ -280,7 +281,20 @@ public partial class MainWindow : Window
 
         PreviewImage.Source = bitmap;
         _panZoom.CurrentBitmap = bitmap;
-        _panZoom.ResetZoom();
+
+        // Keep the current zoom level when moving between images in the same folder; only reset
+        // back to the default fit when the folder itself changed.
+        var folder = Path.GetDirectoryName(item.FullPath);
+        if (_zoomFolderPath != folder)
+        {
+            _panZoom.ResetZoom();
+            _zoomFolderPath = folder;
+        }
+        else
+        {
+            _panZoom.ResetScrollPosition();
+        }
+
         StatusText.Text = $"{item.FileName}   ({bitmap.PixelWidth} x {bitmap.PixelHeight})";
     }
 
@@ -306,6 +320,14 @@ public partial class MainWindow : Window
                 break;
             case Key.Left:
                 SelectRelative(-1);
+                e.Handled = true;
+                break;
+            case Key.Down:
+                _panZoom.ScrollLineDown();
+                e.Handled = true;
+                break;
+            case Key.Up:
+                _panZoom.ScrollLineUp();
                 e.Handled = true;
                 break;
             case Key.D0 or Key.NumPad0:
@@ -382,7 +404,7 @@ public partial class MainWindow : Window
 
     private void PreviewImage_MouseMove(object sender, MouseEventArgs e) => _panZoom.OnImageMouseMove(e);
 
-    // ---------- Single-Vista Mia ----------
+    // ---------- Single-image viewer ----------
 
     private void ThumbnailList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {

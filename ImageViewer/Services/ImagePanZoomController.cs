@@ -53,9 +53,21 @@ public sealed class ImagePanZoomController
         var scale = ComputeFitScale();
         _scale.ScaleX = scale;
         _scale.ScaleY = scale;
+        ResetScrollPosition();
+    }
+
+    /// <summary>Scrolls back to the top-left without touching the current zoom level - used when
+    /// switching to a new image but keeping the zoom the user already set.</summary>
+    public void ResetScrollPosition()
+    {
         _scrollViewer.ScrollToHorizontalOffset(0);
         _scrollViewer.ScrollToVerticalOffset(0);
     }
+
+    /// <summary>Scrolls one line, matching what the ScrollViewer's own mouse-wheel handling does.</summary>
+    public void ScrollLineUp() => _scrollViewer.LineUp();
+
+    public void ScrollLineDown() => _scrollViewer.LineDown();
 
     private double ComputeFitScale()
     {

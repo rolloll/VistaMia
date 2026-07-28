@@ -26,6 +26,7 @@ public partial class SingleViewerWindow : Window
     private BitmapSource? _originalBitmap;
     private bool _hdrEnabled;
     private bool _isSlideshowRunning;
+    private string? _zoomFolderPath;
 
     public SingleViewerWindow(List<string> filePaths, int startIndex)
     {
@@ -70,7 +71,20 @@ public partial class SingleViewerWindow : Window
 
         ApplyHdrState();
         _panZoom.CurrentBitmap = bitmap;
-        _panZoom.ResetZoom();
+
+        // Keep the current zoom level when moving between images in the same folder; only reset
+        // back to the default fit when the folder itself changed (e.g. via File > Open).
+        var folder = Path.GetDirectoryName(path);
+        if (_zoomFolderPath != folder)
+        {
+            _panZoom.ResetZoom();
+            _zoomFolderPath = folder;
+        }
+        else
+        {
+            _panZoom.ResetScrollPosition();
+        }
+
         StatusText.Text = $"{Path.GetFileName(path)}   ({bitmap.PixelWidth} x {bitmap.PixelHeight})   [{index + 1}/{_filePaths.Count}]";
     }
 
@@ -107,6 +121,14 @@ public partial class SingleViewerWindow : Window
                 break;
             case Key.Left:
                 SelectRelative(-1);
+                e.Handled = true;
+                break;
+            case Key.Down:
+                _panZoom.ScrollLineDown();
+                e.Handled = true;
+                break;
+            case Key.Up:
+                _panZoom.ScrollLineUp();
                 e.Handled = true;
                 break;
             case Key.D0 or Key.NumPad0:
