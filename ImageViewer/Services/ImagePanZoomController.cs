@@ -69,6 +69,11 @@ public sealed class ImagePanZoomController
 
     public void ScrollLineDown() => _scrollViewer.LineDown();
 
+    /// <summary>Scrolls one viewport-height, for PageUp/PageDown.</summary>
+    public void ScrollPageUp() => _scrollViewer.PageUp();
+
+    public void ScrollPageDown() => _scrollViewer.PageDown();
+
     private double ComputeFitScale()
     {
         if (CurrentBitmap == null) return 1;

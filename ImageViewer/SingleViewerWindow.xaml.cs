@@ -131,6 +131,14 @@ public partial class SingleViewerWindow : Window
                 _panZoom.ScrollLineUp();
                 e.Handled = true;
                 break;
+            case Key.PageDown:
+                _panZoom.ScrollPageDown();
+                e.Handled = true;
+                break;
+            case Key.PageUp:
+                _panZoom.ScrollPageUp();
+                e.Handled = true;
+                break;
             case Key.D0 or Key.NumPad0:
                 _panZoom.ResetZoom();
                 e.Handled = true;
