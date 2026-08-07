@@ -330,6 +330,14 @@ public partial class MainWindow : Window
                 _panZoom.ScrollLineUp();
                 e.Handled = true;
                 break;
+            case Key.Home:
+                _panZoom.ScrollToTop();
+                e.Handled = true;
+                break;
+            case Key.End:
+                _panZoom.ScrollToBottom();
+                e.Handled = true;
+                break;
             case Key.PageDown:
                 _panZoom.ScrollPageDown();
                 e.Handled = true;

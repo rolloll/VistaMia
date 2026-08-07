@@ -74,6 +74,11 @@ public sealed class ImagePanZoomController
 
     public void ScrollPageDown() => _scrollViewer.PageDown();
 
+    /// <summary>Jumps to the top or bottom of the image, for Home/End.</summary>
+    public void ScrollToTop() => _scrollViewer.ScrollToHome();
+
+    public void ScrollToBottom() => _scrollViewer.ScrollToEnd();
+
     private double ComputeFitScale()
     {
         if (CurrentBitmap == null) return 1;
