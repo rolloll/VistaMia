@@ -85,8 +85,11 @@ public partial class SingleViewerWindow : Window
             _panZoom.ResetScrollPosition();
         }
 
-        StatusText.Text = $"{Path.GetFileName(path)}   ({bitmap.PixelWidth} x {bitmap.PixelHeight})   [{index + 1}/{_filePaths.Count}]";
+        StatusText.Text = $"{Path.GetFileName(path)} ({bitmap.PixelWidth} x {bitmap.PixelHeight}) [{index + 1}/{_filePaths.Count}]";
+        UpdateZoomLabel();
     }
+
+    private void UpdateZoomLabel() => ZoomLabelText.Text = $"{Math.Round(PreviewScaleTransform.ScaleX * 100)}%";
 
     private void SelectRelative(int delta, bool wrap = false)
     {
@@ -149,14 +152,17 @@ public partial class SingleViewerWindow : Window
                 break;
             case Key.D0 or Key.NumPad0:
                 _panZoom.ResetZoom();
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
             case Key.OemPlus or Key.Add:
                 _panZoom.ZoomBy(1.2);
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
             case Key.OemMinus or Key.Subtract:
                 _panZoom.ZoomBy(1 / 1.2);
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
         }
@@ -164,7 +170,11 @@ public partial class SingleViewerWindow : Window
 
     // ---------- Zoom / pan (delegates to the shared controller) ----------
 
-    private void PreviewScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e) => _panZoom.OnPreviewMouseWheel(e);
+    private void PreviewScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _panZoom.OnPreviewMouseWheel(e);
+        UpdateZoomLabel();
+    }
 
     private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => _panZoom.OnImageMouseLeftButtonDown(e);
 
@@ -313,7 +323,11 @@ public partial class SingleViewerWindow : Window
     private void RotateRightButton_Click(object sender, RoutedEventArgs e) =>
         PreviewRotateTransform.Angle = (PreviewRotateTransform.Angle + 90) % 360;
 
-    private void FitButton_Click(object sender, RoutedEventArgs e) => _panZoom.ResetZoom();
+    private void FitButton_Click(object sender, RoutedEventArgs e)
+    {
+        _panZoom.ResetZoom();
+        UpdateZoomLabel();
+    }
 
     private void SlideshowButton_Click(object sender, RoutedEventArgs e)
     {

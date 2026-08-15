@@ -14,6 +14,35 @@ public sealed class ThumbnailItem : INotifyPropertyChanged
 {
     public required string FullPath { get; init; }
     public required string FileName { get; init; }
+    public int RowNumber { get; set; }
+
+    public string Format => Path.GetExtension(FileName).TrimStart('.').ToUpperInvariant();
+    public bool IsRawFormat => Format is "PSD" or "CLIP";
+
+    private FileInfo? _fileInfo;
+    private FileInfo Info => _fileInfo ??= new FileInfo(FullPath);
+
+    public string FileSizeDisplay
+    {
+        get
+        {
+            try
+            {
+                var bytes = Info.Length;
+                return bytes >= 1024 * 1024 ? $"{bytes / (1024.0 * 1024.0):N1} MB" : $"{bytes / 1024.0:N0} KB";
+            }
+            catch { return "—"; }
+        }
+    }
+
+    public string ModifiedDisplay
+    {
+        get
+        {
+            try { return Info.LastWriteTime.ToString("yyyy-MM-dd HH:mm"); }
+            catch { return "—"; }
+        }
+    }
 
     private BitmapSource? _thumbnail;
     public BitmapSource? Thumbnail
@@ -32,6 +61,8 @@ public sealed class ThumbnailItem : INotifyPropertyChanged
 public partial class MainWindow : Window
 {
     private const int ThumbnailPixelWidth = 176;
+    private const string MaximizeGlyph = "□";
+    private const string RestoreGlyph = "▣";
 
     private readonly ObservableCollection<ThumbnailItem> _thumbnails = new();
     private CancellationTokenSource? _thumbnailLoadCts;
@@ -47,8 +78,13 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ThumbnailList.ItemsSource = _thumbnails;
+        FileTable.ItemsSource = _thumbnails;
         _panZoom = new ImagePanZoomController(PreviewScrollViewer, PreviewImage, PreviewScaleTransform);
         PopulateDriveRoots();
+        PopulateFormatTags();
+
+        StateChanged += (_, _) => UpdateMaximizeIcon();
+        UpdateMaximizeIcon();
 
         if (!string.IsNullOrWhiteSpace(initialFilePath))
         {
@@ -57,6 +93,73 @@ public partial class MainWindow : Window
             SetTreeCollapsed(true);
             _ = OpenInitialFileAsync(initialFilePath);
         }
+    }
+
+    // Extensions that are really the same format under two spellings - shown once, under the
+    // more common name, rather than as two near-duplicate tags side by side.
+    private static readonly Dictionary<string, string> FormatDisplayAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["JPG"] = "JPEG",
+        ["TIF"] = "TIFF"
+    };
+
+    private void PopulateFormatTags()
+    {
+        var seen = new HashSet<string>();
+        foreach (var ext in ImageLoader.SupportedExtensions)
+        {
+            var name = ext.TrimStart('.').ToUpperInvariant();
+            name = FormatDisplayAliases.GetValueOrDefault(name, name);
+            if (!seen.Add(name)) continue;
+
+            var isRaw = name is "PSD" or "CLIP";
+            var tag = new Border
+            {
+                Background = (System.Windows.Media.Brush)FindResource(isRaw ? "Accent2Brush" : "SurfaceBrush"),
+                CornerRadius = (CornerRadius)FindResource("RadiusMd"),
+                Padding = new Thickness(8, 3, 8, 3),
+                Margin = new Thickness(3),
+                Opacity = isRaw ? 1.0 : 1.0
+            };
+            var text = new TextBlock
+            {
+                Text = name,
+                FontSize = 10,
+                Foreground = (System.Windows.Media.Brush)FindResource(isRaw ? "BgBrush" : "TextMutedBrush")
+            };
+            tag.Child = text;
+            FormatTagsPanel.Items.Add(tag);
+        }
+    }
+
+    // ---------- Title bar ----------
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void UpdateMaximizeIcon() => MaximizeButton.Content = WindowState == WindowState.Maximized ? RestoreGlyph : MaximizeGlyph;
+
+    // ---------- Drag & drop ----------
+
+    private void Window_DragEnter(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void Window_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] { Length: > 0 } paths) return;
+
+        var dropped = paths[0];
+        if (Directory.Exists(dropped))
+            _ = LoadFolderAsync(dropped);
+        else if (File.Exists(dropped))
+            _ = OpenInitialFileAsync(dropped);
     }
 
     /// <summary>Handles launch via "Open with" / file association: load the file's folder and select it.</summary>
@@ -233,10 +336,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        var items = files.Select(f => new ThumbnailItem { FullPath = f, FileName = Path.GetFileName(f) }).ToList();
+        var items = files.Select((f, i) => new ThumbnailItem { FullPath = f, FileName = Path.GetFileName(f), RowNumber = i + 1 }).ToList();
         foreach (var item in items)
             _thumbnails.Add(item);
 
+        var folderName = Path.GetFileName(folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        ThumbnailHeaderText.Text = $"{items.Count}개 파일";
+        ThumbnailFolderText.Text = folderName;
+        TitleSubtitleText.Text = folderName;
         BottomStatusText.Text = $"{items.Count}개 파일   |   ←/→ 또는 이전/다음 버튼: 이미지 이동   |   Ctrl+휠: 확대/축소   |   휠: 스크롤   |   드래그: 이동   |   0: 원본 크기 맞춤";
 
         foreach (var item in items)
@@ -251,11 +358,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ThumbnailList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void ThumbnailList_SelectionChanged(object sender, SelectionChangedEventArgs e) => OnFileSelected(ThumbnailList.SelectedIndex);
+
+    private void FileTable_SelectionChanged(object sender, SelectionChangedEventArgs e) => OnFileSelected(FileTable.SelectedIndex);
+
+    /// <summary>Grid and table views are two independent controls bound to the same collection;
+    /// this keeps whichever one is hidden in sync so switching views doesn't lose the selection.</summary>
+    private void OnFileSelected(int index)
     {
-        var index = ThumbnailList.SelectedIndex;
-        if (index < 0) return;
+        if (index < 0 || index == _currentIndex) return;
         _currentIndex = index;
+        if (ThumbnailList.SelectedIndex != index) ThumbnailList.SelectedIndex = index;
+        if (FileTable.SelectedIndex != index) FileTable.SelectedIndex = index;
         ShowPreview(_currentIndex);
     }
 
@@ -295,16 +409,24 @@ public partial class MainWindow : Window
             _panZoom.ResetScrollPosition();
         }
 
-        StatusText.Text = $"{item.FileName}   ({bitmap.PixelWidth} x {bitmap.PixelHeight})";
+        StatusText.Text = $"{item.FileName} ({bitmap.PixelWidth} x {bitmap.PixelHeight})";
+        UpdateZoomLabel();
+        OpenViewerButton.IsEnabled = true;
+        StatusChipPanel.Visibility = Visibility.Visible;
     }
+
+    private void UpdateZoomLabel() => ZoomLabelText.Text = $"{Math.Round(PreviewScaleTransform.ScaleX * 100)}%";
 
     private void ShowEmptyState(bool show)
     {
-        EmptyStateText.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        WelcomePanel.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (show)
         {
             PreviewImage.Source = null;
             StatusText.Text = string.Empty;
+            ZoomLabelText.Text = string.Empty;
+            OpenViewerButton.IsEnabled = false;
+            StatusChipPanel.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -348,14 +470,17 @@ public partial class MainWindow : Window
                 break;
             case Key.D0 or Key.NumPad0:
                 _panZoom.ResetZoom();
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
             case Key.OemPlus or Key.Add:
                 _panZoom.ZoomBy(1.2);
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
             case Key.OemMinus or Key.Subtract:
                 _panZoom.ZoomBy(1 / 1.2);
+                UpdateZoomLabel();
                 e.Handled = true;
                 break;
         }
@@ -366,13 +491,27 @@ public partial class MainWindow : Window
         if (_thumbnails.Count == 0) return;
         var next = Math.Clamp(_currentIndex + delta, 0, _thumbnails.Count - 1);
         if (next == _currentIndex) return;
-        ThumbnailList.SelectedIndex = next;
-        ThumbnailList.ScrollIntoView(ThumbnailList.SelectedItem);
+        OnFileSelected(next);
+        if (ListViewToggle.IsChecked == true)
+            FileTable.ScrollIntoView(FileTable.SelectedItem);
+        else
+            ThumbnailList.ScrollIntoView(ThumbnailList.SelectedItem);
     }
 
     private void PrevImageButton_Click(object sender, RoutedEventArgs e) => SelectRelative(-1);
 
     private void NextImageButton_Click(object sender, RoutedEventArgs e) => SelectRelative(1);
+
+    // ---------- Grid / List view toggle ----------
+
+    private void ViewModeToggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (FileTable is null || ThumbnailList is null) return; // fires once during XAML init, before both exist
+
+        var showList = ReferenceEquals(sender, ListViewToggle);
+        ThumbnailList.Visibility = showList ? Visibility.Collapsed : Visibility.Visible;
+        FileTable.Visibility = showList ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     // ---------- Folder tree toggle ----------
 
@@ -404,7 +543,35 @@ public partial class MainWindow : Window
 
     // ---------- Zoom / pan ----------
 
-    private void PreviewScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e) => _panZoom.OnPreviewMouseWheel(e);
+    private void PreviewScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _panZoom.OnPreviewMouseWheel(e);
+        UpdateZoomLabel();
+    }
+
+    private void ZoomOutButton_Click(object sender, RoutedEventArgs e)
+    {
+        _panZoom.ZoomBy(1 / 1.2);
+        UpdateZoomLabel();
+    }
+
+    private void ZoomInButton_Click(object sender, RoutedEventArgs e)
+    {
+        _panZoom.ZoomBy(1.2);
+        UpdateZoomLabel();
+    }
+
+    private void ZoomFitButton_Click(object sender, RoutedEventArgs e)
+    {
+        _panZoom.ResetZoom();
+        UpdateZoomLabel();
+    }
+
+    private void OpenViewerButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentIndex < 0 || _thumbnails.Count == 0) return;
+        OpenSingleViewer(_currentIndex);
+    }
 
     private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -426,6 +593,12 @@ public partial class MainWindow : Window
     {
         if (ThumbnailList.SelectedIndex < 0 || _thumbnails.Count == 0) return;
         OpenSingleViewer(ThumbnailList.SelectedIndex);
+    }
+
+    private void FileTable_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (FileTable.SelectedIndex < 0 || _thumbnails.Count == 0) return;
+        OpenSingleViewer(FileTable.SelectedIndex);
     }
 
     private void PreviewImage_MouseDoubleClick(object sender, MouseButtonEventArgs e)
