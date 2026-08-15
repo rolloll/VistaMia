@@ -1,0 +1,15 @@
+<Window x:Class="ImageViewer.UpdateProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Vista Mia" Height="130" Width="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Icon="pack://application:,,,/Resources/icon.ico">
+    <StackPanel VerticalAlignment="Center" Margin="28,0">
+        <TextBlock Text="업데이트 다운로드 중" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <TextBlock Text="새 버전을 내려받고 있습니다. 완료되면 앱이 자동으로 다시 시작됩니다."
+                   FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,16"/>
+        <ProgressBar IsIndeterminate="True" Height="4" Foreground="{StaticResource AccentBrush}" Background="{StaticResource SurfaceBrush}" BorderThickness="0"/>
+    </StackPanel>
+</Window>

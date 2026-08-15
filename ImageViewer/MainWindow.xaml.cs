@@ -538,6 +538,7 @@ public partial class MainWindow : Window
             FolderTreeSplitter.Visibility = Visibility.Collapsed;
         }
 
+        ToggleTreeButton.Content = collapsed ? "»" : "«";
         _isTreeCollapsed = collapsed;
     }
 

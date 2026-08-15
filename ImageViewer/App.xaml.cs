@@ -29,13 +29,35 @@ public partial class App : Application
         if (update == null) return;
 
         var result = MessageBox.Show(owner,
-            $"새 버전 {update.Version}이 있습니다 (현재 버전: {UpdateChecker.CurrentVersion}).\nGitHub 릴리스 페이지로 이동해서 다운로드하시겠습니까?",
+            $"새 버전 {update.Version}이 있습니다 (현재 버전: {UpdateChecker.CurrentVersion}).\n지금 다운로드해서 자동으로 업데이트하시겠습니까?",
             "업데이트 확인", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
-        if (result == MessageBoxResult.Yes)
+        if (result != MessageBoxResult.Yes) return;
+
+        if (update.AssetDownloadUrl == null)
         {
+            // No matching release asset (e.g. a draft/manual release) - fall back to the browser.
             Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+            return;
         }
+
+        var progress = new UpdateProgressWindow { Owner = owner };
+        progress.Show();
+
+        var applied = await SelfUpdater.DownloadAndApplyAsync(update.AssetDownloadUrl);
+
+        if (!applied)
+        {
+            progress.Close();
+            MessageBox.Show(owner, "자동 업데이트에 실패했습니다. 대신 릴리스 페이지를 엽니다.", "업데이트 확인",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+            return;
+        }
+
+        // The swap script is waiting for this process to exit before it copies the new exe in
+        // and relaunches it, so shut down now rather than closing the progress window.
+        Current.Shutdown();
     }
 }
 
