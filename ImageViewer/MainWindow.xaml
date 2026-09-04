@@ -61,6 +61,9 @@
                              KeyDown="PathTextBox_KeyDown"/>
                     <Button x:Name="OpenFolderButton" Content="열기" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="OpenFolderButton_Click"/>
                     <Button x:Name="BrowseFolderButton" Content="찾아보기..." Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Click="BrowseFolderButton_Click"/>
+                    <Button x:Name="ResizeButton" Content="리사이즈..." Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Click="ResizeButton_Click"
+                            ToolTip="목록에서 리사이즈할 파일을 선택하세요 (Ctrl/Shift+클릭으로 여러 개 선택 가능)"/>
+                    <Button x:Name="RenameButton" Content="이름 변경..." Style="{StaticResource SecondaryButton}" Margin="8,0,0,0" Click="RenameButton_Click"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="보기" FontSize="11" Foreground="{StaticResource TextFaintBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -108,13 +111,22 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <StackPanel Orientation="Horizontal" Margin="4,0,0,10">
-                    <TextBlock x:Name="ThumbnailHeaderText" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextFaintBrush}"/>
-                    <TextBlock x:Name="ThumbnailFolderText" FontSize="11" Foreground="{StaticResource Accent700Brush}" Margin="8,0,0,0"/>
-                </StackPanel>
+                <Grid Margin="4,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock x:Name="ThumbnailHeaderText" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource TextFaintBrush}"/>
+                        <TextBlock x:Name="ThumbnailFolderText" FontSize="11" Foreground="{StaticResource Accent700Brush}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="모두 선택" Style="{StaticResource GhostButton}" FontSize="10"
+                            ToolTip="리사이즈 등에 쓸 파일을 모두 선택합니다" Click="SelectAllButton_Click"/>
+                </Grid>
 
                 <ListBox x:Name="ThumbnailList"
                          Grid.Row="1"
+                         SelectionMode="Extended"
                          SelectionChanged="ThumbnailList_SelectionChanged"
                          MouseDoubleClick="ThumbnailList_MouseDoubleClick"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -144,6 +156,7 @@
                                     </TextBlock>
                                     <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" FontSize="11"/>
                                 </StackPanel>
+                                <TextBlock Text="{Binding DimensionsDisplay}" FontSize="9" Foreground="{StaticResource TextFaintBrush}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -152,6 +165,7 @@
                 <ListView x:Name="FileTable"
                           Grid.Row="1"
                           Visibility="Collapsed"
+                          SelectionMode="Extended"
                           SelectionChanged="FileTable_SelectionChanged"
                           MouseDoubleClick="FileTable_MouseDoubleClick">
                     <ListView.View>
@@ -192,6 +206,13 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding FileSizeDisplay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="픽셀" Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DimensionsDisplay}" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

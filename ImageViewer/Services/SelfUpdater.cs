@@ -60,18 +60,38 @@ public static class SelfUpdater
                 Copy-Item -Path "{{newExePath}}" -Destination "{{currentExePath}}" -Force
                 Remove-Item -Path "{{zipPath}}" -Force
                 Remove-Item -Path "{{extractDir}}" -Recurse -Force
-                Start-Process -FilePath "{{currentExePath}}"
+                Start-Process -FilePath explorer.exe -ArgumentList "{{currentExePath}}"
                 """;
             await File.WriteAllTextAsync(scriptPath, script, new UTF8Encoding(true));
 
-            Process.Start(new ProcessStartInfo
+            // The install folder (see AppInstallLocation) is user-chosen and usually doesn't need
+            // admin rights, but someone who picked somewhere under Program Files does need
+            // elevation to write there - so probe first rather than always prompting for UAC.
+            // UseShellExecute+Verb=runas can't be combined with CreateNoWindow, but "-WindowStyle
+            // Hidden" is a PowerShell argument (not a launcher property), so either way the
+            // script's own window stays hidden.
+            var installDir = Path.GetDirectoryName(currentExePath)!;
+            if (AppInstallLocation.CanWriteWithoutElevation(installDir))
             {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                });
+            }
+            else
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
+                    UseShellExecute = true,
+                    Verb = "runas"
+                });
+            }
 
             return true;
         }

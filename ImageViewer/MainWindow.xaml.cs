@@ -22,6 +22,20 @@ public sealed class ThumbnailItem : INotifyPropertyChanged
     private FileInfo? _fileInfo;
     private FileInfo Info => _fileInfo ??= new FileInfo(FullPath);
 
+    private (int Width, int Height)? _dimensions;
+    public (int Width, int Height)? Dimensions
+    {
+        get => _dimensions;
+        set
+        {
+            _dimensions = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Dimensions)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DimensionsDisplay)));
+        }
+    }
+
+    public string DimensionsDisplay => Dimensions is { } d ? $"{d.Width} x {d.Height}" : "—";
+
     public string FileSizeDisplay
     {
         get
@@ -344,17 +358,20 @@ public partial class MainWindow : Window
         ThumbnailHeaderText.Text = $"{items.Count}개 파일";
         ThumbnailFolderText.Text = folderName;
         TitleSubtitleText.Text = folderName;
-        BottomStatusText.Text = $"{items.Count}개 파일   |   ←/→ 또는 이전/다음 버튼: 이미지 이동   |   Ctrl+휠: 확대/축소   |   휠: 스크롤   |   드래그: 이동   |   0: 원본 크기 맞춤";
+        BottomStatusText.Text = $"{items.Count}개 파일   |   ←/→ 또는 이전/다음 버튼: 이미지 이동   |   Ctrl+휠: 확대/축소   |   휠: 스크롤   |   드래그: 이동   |   0: 원본 크기 맞춤   |   Ctrl/Shift+클릭: 리사이즈할 파일 여러 개 선택";
 
         foreach (var item in items)
         {
             if (cts.Token.IsCancellationRequested) return;
 
             var path = item.FullPath;
-            var bitmap = await Task.Run(() => ImageLoader.Load(path, ThumbnailPixelWidth), cts.Token);
+            var (bitmap, dimensions) = await Task.Run(
+                () => (ImageLoader.Load(path, ThumbnailPixelWidth), ImageDimensionReader.TryGetDimensions(path)),
+                cts.Token);
             if (cts.Token.IsCancellationRequested) return;
 
             item.Thumbnail = bitmap;
+            item.Dimensions = dimensions;
         }
     }
 
@@ -613,5 +630,54 @@ public partial class MainWindow : Window
         var paths = _thumbnails.Select(t => t.FullPath).ToList();
         var viewer = new SingleViewerWindow(paths, index) { Owner = this };
         viewer.Show();
+    }
+
+    // ---------- Batch resize / batch rename ----------
+
+    private void SelectAllButton_Click(object sender, RoutedEventArgs e)
+    {
+        // ListView derives from ListBox, so both controls fit through this one reference.
+        ListBox activeList = ListViewToggle.IsChecked == true ? FileTable : ThumbnailList;
+        activeList.SelectAll();
+    }
+
+    private void ResizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_thumbnails.Count == 0)
+        {
+            MessageBox.Show(this, "먼저 이미지가 있는 폴더를 열어주세요.", "Vista Mia", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Grid and list view are two independent ListBox/ListView controls bound to the same
+        // collection (see the class comment on OnFileSelected) - only the one currently visible
+        // holds the selection the user actually made.
+        // ListView derives from ListBox, so both controls fit through this one reference.
+        ListBox activeList = ListViewToggle.IsChecked == true ? FileTable : ThumbnailList;
+        var selectedPaths = activeList.SelectedItems.Cast<ThumbnailItem>().Select(t => t.FullPath).ToList();
+
+        if (selectedPaths.Count == 0)
+        {
+            MessageBox.Show(this, "리사이즈할 파일을 목록에서 선택하세요.\n(Ctrl/Shift+클릭으로 여러 개를 선택할 수 있습니다.)",
+                "Vista Mia", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new BatchResizeWindow(selectedPaths) { Owner = this };
+        window.ShowDialog();
+    }
+
+    private void RenameButton_Click(object sender, RoutedEventArgs e)
+    {
+        var folderPath = PathTextBox.Text;
+        if (!Directory.Exists(folderPath))
+        {
+            MessageBox.Show(this, "먼저 폴더를 열어주세요.", "Vista Mia", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var window = new BatchRenameWindow(folderPath) { Owner = this };
+        window.RenameApplied += () => _ = LoadFolderAsync(folderPath);
+        window.ShowDialog();
     }
 }

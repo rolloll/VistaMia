@@ -15,6 +15,23 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+#if !DEBUG
+        // Keep this guarded to Release builds only - enforcing it in Debug would mean every F5 in
+        // Visual Studio pops this prompt instead of just running the copy being debugged.
+        if (!AppInstallLocation.IsRunningFromInstalledLocation())
+        {
+            var installWindow = new InstallLocationWindow();
+            installWindow.ShowDialog();
+            if (installWindow.Installed)
+            {
+                Shutdown();
+                return;
+            }
+            // Skipped ("나중에") or the copy failed - keep running in place; this prompts again
+            // next launch since no install location got recorded.
+        }
+#endif
+
         // Windows passes the target file as argv[0] for "Open with" / file-association launches.
         var initialFilePath = e.Args.Length > 0 ? e.Args[0] : null;
         var mainWindow = new MainWindow(initialFilePath);

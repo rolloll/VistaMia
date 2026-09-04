@@ -23,6 +23,20 @@ so no .NET install is required.
   `0` resets to fit-to-window.
 - **Slideshow** with an adjustable interval, **90° rotation**, and a basic **EXIF** info panel
   (falls back gracefully for formats with no EXIF data).
+- **Pixel dimensions at a glance**: every thumbnail and file-list row shows its true pixel size,
+  read from the file header without a full decode.
+- **Batch resize** (toolbar → 리사이즈): resize a multi-select of images to a target width/height
+  given in px, cm, or mm (against a DPI you can set, prefilled from the image's own metadata when
+  present). With aspect ratio kept, a batch that shares one dimension but varies in the other
+  (e.g. a comic episode's same-width, different-height pages) resizes every file to that shared
+  size on its own terms, rather than boxing them all into one reference image's proportions.
+  Results are written to a separate folder; source files are never modified.
+- **Batch rename** (toolbar → 이름 변경): rename a folder's image files, or its subfolders, with a
+  `{name}`/`{n}`/`{n:3}`/`{ext}` token template, previewed old-name → new-name in an editable grid
+  before anything is renamed.
+- **User-chosen install location**: on first run, a small prompt lets you pick where Vista Mia
+  lives (defaulting to Program Files (x86)); that choice is remembered for future launches and
+  self-updates.
 
 ## Supported formats
 
@@ -71,12 +85,19 @@ dotnet publish ImageViewer -c Release -r win-x64 --self-contained true -p:Publis
 
 ```
 ImageViewer/
-  MainWindow.xaml(.cs)          Folder explorer: tree + thumbnails + preview
-  SingleViewerWindow.xaml(.cs)  Borderless single-image viewer window
-  Models/ImageFileItem.cs       Simple file record used by the folder tree
+  MainWindow.xaml(.cs)             Folder explorer: tree + thumbnails + preview
+  SingleViewerWindow.xaml(.cs)     Borderless single-image viewer window
+  BatchResizeWindow.xaml(.cs)      Batch resize dialog (px/cm/mm, aspect-ratio handling)
+  BatchRenameWindow.xaml(.cs)      Batch rename dialog (template + editable preview)
+  InstallLocationWindow.xaml(.cs)  First-run "choose where to install" prompt
   Services/
-    ImageLoader.cs              Format dispatch (native / Magick.NET / CLIP)
-    ClipThumbnailReader.cs      CLIP chunk parsing + embedded PNG extraction
-    ImagePanZoomController.cs   Shared zoom/pan/fit-to-window logic
+    ImageLoader.cs               Format dispatch (native / Magick.NET / CLIP)
+    ClipThumbnailReader.cs       CLIP chunk parsing + embedded PNG extraction
+    ImagePanZoomController.cs    Shared zoom/pan/fit-to-window logic
+    ImageDimensionReader.cs      Header-only pixel size / DPI reads for display
+    ImageResizer.cs              px/cm/mm → pixel conversion + the actual resize
+    BatchRenamer.cs              Rename plan building/validation/two-phase apply
+    AppInstallLocation.cs        Install-location prompt, copy, and elevation handling
+    SelfUpdater.cs               Downloads/applies updates from GitHub releases
   Resources/icon.ico            App icon
 ```

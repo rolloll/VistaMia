@@ -12,12 +12,14 @@ namespace ImageViewer.Services;
 /// </summary>
 public static class ImageLoader
 {
-    private static readonly HashSet<string> NativeExtensions = new(StringComparer.OrdinalIgnoreCase)
+    // internal rather than private so ImageDimensionReader can dispatch by extension the same way
+    // this class does, without duplicating (and risking drift from) the list.
+    internal static readonly HashSet<string> NativeExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".tif"
     };
 
-    private static readonly HashSet<string> MagickExtensions = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly HashSet<string> MagickExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".psd", ".psb", ".webp", ".ico", ".heic", ".heif"
     };
