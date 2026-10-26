@@ -32,6 +32,9 @@ public partial class App : Application
         }
 #endif
 
+        // Clear stale files left by older versions (no-op unless this is the single-file build).
+        _ = Task.Run(OldVersionCleaner.TryCleanCurrentInstall);
+
         // Windows passes the target file as argv[0] for "Open with" / file-association launches.
         var initialFilePath = e.Args.Length > 0 ? e.Args[0] : null;
         var mainWindow = new MainWindow(initialFilePath);

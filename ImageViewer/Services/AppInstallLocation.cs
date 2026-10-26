@@ -89,12 +89,30 @@ public static class AppInstallLocation
         targetDir = targetDir.TrimEnd('\\', '/');
         var targetExe = Path.Combine(targetDir, "VistaMia.exe");
 
+        // A previous install in a different folder is an old version once this one is installed -
+        // remove it (read before SaveInstalledDirectory overwrites the record).
+        var previousDir = GetInstalledDirectory()?.TrimEnd('\\', '/');
+        if (string.IsNullOrEmpty(previousDir) ||
+            string.Equals(previousDir, targetDir, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(previousDir, currentDir, StringComparison.OrdinalIgnoreCase))
+            previousDir = null;
+
         if (CanWriteWithoutElevation(targetDir))
         {
             try
             {
                 CopyAppFiles(currentDir, targetDir);
                 SaveInstalledDirectory(targetDir);
+                if (OldVersionCleaner.IsSingleFileBuild)
+                {
+                    try { OldVersionCleaner.RemoveSidecars(targetDir); }
+                    catch { /* clutter only */ }
+                }
+                if (previousDir != null)
+                {
+                    try { OldVersionCleaner.RemoveOldInstall(previousDir); }
+                    catch { /* previous folder needs admin or is in use - leave it */ }
+                }
                 Process.Start(new ProcessStartInfo { FileName = "explorer.exe", Arguments = $"\"{targetExe}\"" });
                 return true;
             }
@@ -105,10 +123,10 @@ public static class AppInstallLocation
             }
         }
 
-        return InstallElevated(currentDir, targetDir, targetExe);
+        return InstallElevated(currentDir, targetDir, targetExe, previousDir);
     }
 
-    private static bool InstallElevated(string currentDir, string targetDir, string targetExe)
+    private static bool InstallElevated(string currentDir, string targetDir, string targetExe, string? previousDir)
     {
         try
         {
@@ -120,6 +138,8 @@ public static class AppInstallLocation
                 New-Item -ItemType Directory -Path "{{targetDir}}" -Force | Out-Null
                 Copy-Item -Path "{{currentDir}}\*" -Destination "{{targetDir}}" -Recurse -Force
                 Remove-Item -Path "{{targetDir}}\win-x64" -Recurse -Force -ErrorAction SilentlyContinue
+                {{(OldVersionCleaner.IsSingleFileBuild ? OldVersionCleaner.SidecarCleanupScript(targetDir) : "")}}
+                {{(previousDir == null ? "" : OldVersionCleaner.OldInstallRemovalScript(previousDir))}}
                 Start-Process -FilePath explorer.exe -ArgumentList "{{targetExe}}"
                 """;
             File.WriteAllText(scriptPath, script, new UTF8Encoding(true));

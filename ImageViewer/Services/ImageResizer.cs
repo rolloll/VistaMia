@@ -50,7 +50,7 @@ public static class ImageResizer
     /// are proportionally taller/narrower than that reference below the intended fixed dimension.
     /// Driving off a single dimension keeps every file at exactly that size on its own terms.
     /// </summary>
-    public static void ResizeToFile(string sourcePath, string destPath, uint widthPx, uint heightPx, bool ignoreAspectRatio, bool primaryIsWidth = true)
+    public static void ResizeToFile(string sourcePath, string destPath, uint widthPx, uint heightPx, bool ignoreAspectRatio, bool primaryIsWidth = true, double? dpi = null)
     {
         using var image = new MagickImage(sourcePath);
         var geometry = ignoreAspectRatio
@@ -59,6 +59,11 @@ public static class ImageResizer
                 ? new MagickGeometry(widthPx, 0)
                 : new MagickGeometry(0, heightPx);
         image.Resize(geometry);
+
+        // Resize only changes pixel dimensions; the DPI the user entered has to be stamped into
+        // the output's density metadata or it is silently ignored.
+        if (dpi is > 0)
+            image.Density = new Density(dpi.Value, DensityUnit.PixelsPerInch);
 
         var destDir = Path.GetDirectoryName(destPath);
         if (!string.IsNullOrEmpty(destDir))

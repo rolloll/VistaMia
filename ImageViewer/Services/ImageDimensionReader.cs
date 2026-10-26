@@ -20,6 +20,9 @@ public static class ImageDimensionReader
             if (string.Equals(ext, ".clip", StringComparison.OrdinalIgnoreCase))
                 return GetFromClip(path);
 
+            if (string.Equals(ext, ".ai", StringComparison.OrdinalIgnoreCase))
+                return AiPreviewReader.TryGetSize(path);
+
             if (ImageLoader.MagickExtensions.Contains(ext))
             {
                 var info = new MagickImageInfo(path);

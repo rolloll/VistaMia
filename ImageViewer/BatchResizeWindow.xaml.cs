@@ -91,7 +91,6 @@ public partial class BatchResizeWindow : Window
     private void UnitCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (DpiTextBox == null) return; // fires once during XAML init, before the field exists
-        DpiTextBox.IsEnabled = SelectedUnit != ResizeUnit.Pixel;
 
         // Re-express whatever is currently typed in the old unit as the same physical size in the
         // newly selected unit, instead of leaving e.g. a pixel count sitting in the cm field.
@@ -199,7 +198,7 @@ public partial class BatchResizeWindow : Window
                 try
                 {
                     var destPath = Path.Combine(destDir, Path.GetFileName(src));
-                    ImageResizer.ResizeToFile(src, destPath, widthPx, heightPx, ignoreAspect, primaryIsWidth);
+                    ImageResizer.ResizeToFile(src, destPath, widthPx, heightPx, ignoreAspect, primaryIsWidth, dpi);
                 }
                 catch
                 {

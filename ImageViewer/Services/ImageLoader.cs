@@ -25,7 +25,7 @@ public static class ImageLoader
     };
 
     public static readonly IReadOnlyList<string> SupportedExtensions =
-        NativeExtensions.Concat(MagickExtensions).Append(".clip").ToArray();
+        NativeExtensions.Concat(MagickExtensions).Append(".clip").Append(".ai").ToArray();
 
     /// <param name="decodePixelWidth">Pass a small value (e.g. 160) for thumbnails to keep decoding cheap; null for full-resolution preview.</param>
     public static BitmapSource? Load(string path, int? decodePixelWidth = null)
@@ -36,6 +36,12 @@ public static class ImageLoader
         {
             if (string.Equals(ext, ".clip", StringComparison.OrdinalIgnoreCase))
                 return LoadClip(path, decodePixelWidth);
+
+            if (string.Equals(ext, ".ai", StringComparison.OrdinalIgnoreCase))
+            {
+                var png = AiPreviewReader.RenderPreviewPng(path, decodePixelWidth);
+                return png == null ? null : LoadFromBytes(png, null);
+            }
 
             if (MagickExtensions.Contains(ext))
                 return LoadWithMagick(path, decodePixelWidth);

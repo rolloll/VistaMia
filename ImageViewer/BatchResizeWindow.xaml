@@ -61,7 +61,7 @@
             <TextBlock x:Name="PrimaryHintText" FontSize="10" Foreground="{StaticResource TextFaintBrush}" TextWrapping="Wrap" Margin="0,6,0,14"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <TextBlock Text="DPI (cm/mm → px 변환 기준)" FontSize="11" Foreground="{StaticResource TextFaintBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="DPI (저장 파일에 기록 / cm·mm → px 변환 기준)" FontSize="11" Foreground="{StaticResource TextFaintBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBox x:Name="DpiTextBox" Width="70" Text="96"/>
             </StackPanel>
 

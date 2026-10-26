@@ -17,7 +17,7 @@ public sealed class ThumbnailItem : INotifyPropertyChanged
     public int RowNumber { get; set; }
 
     public string Format => Path.GetExtension(FileName).TrimStart('.').ToUpperInvariant();
-    public bool IsRawFormat => Format is "PSD" or "CLIP";
+    public bool IsRawFormat => Format is "PSD" or "CLIP" or "AI";
 
     private FileInfo? _fileInfo;
     private FileInfo Info => _fileInfo ??= new FileInfo(FullPath);
@@ -126,7 +126,7 @@ public partial class MainWindow : Window
             name = FormatDisplayAliases.GetValueOrDefault(name, name);
             if (!seen.Add(name)) continue;
 
-            var isRaw = name is "PSD" or "CLIP";
+            var isRaw = name is "PSD" or "CLIP" or "AI";
             var tag = new Border
             {
                 Background = (System.Windows.Media.Brush)FindResource(isRaw ? "Accent2Brush" : "SurfaceBrush"),

@@ -51,13 +51,18 @@ public static class SelfUpdater
 
             // $$""" ... """ so PowerShell's single-brace `{ }` block below is left alone as
             // literal content; only the doubled {{ }} placeholders are C# interpolation.
+            var installDir = Path.GetDirectoryName(currentExePath)!;
             var scriptPath = Path.Combine(tempDir, "apply_update.ps1");
+            // The release exe is self-contained, so any old multi-file leftovers beside it
+            // (VistaMia.dll, Magick.NET*.dll, runtimes\ ...) are stale - clear them in the same
+            // (possibly elevated) script that swaps the exe.
             var script = $$"""
                 $ErrorActionPreference = 'SilentlyContinue'
                 while (Get-Process -Id {{Environment.ProcessId}} -ErrorAction SilentlyContinue) {
                     Start-Sleep -Milliseconds 500
                 }
                 Copy-Item -Path "{{newExePath}}" -Destination "{{currentExePath}}" -Force
+                {{OldVersionCleaner.SidecarCleanupScript(installDir)}}
                 Remove-Item -Path "{{zipPath}}" -Force
                 Remove-Item -Path "{{extractDir}}" -Recurse -Force
                 Start-Process -FilePath explorer.exe -ArgumentList "{{currentExePath}}"
@@ -70,7 +75,6 @@ public static class SelfUpdater
             // UseShellExecute+Verb=runas can't be combined with CreateNoWindow, but "-WindowStyle
             // Hidden" is a PowerShell argument (not a launcher property), so either way the
             // script's own window stays hidden.
-            var installDir = Path.GetDirectoryName(currentExePath)!;
             if (AppInstallLocation.CanWriteWithoutElevation(installDir))
             {
                 Process.Start(new ProcessStartInfo

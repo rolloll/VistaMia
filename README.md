@@ -1,8 +1,8 @@
 # Vista Mia
 
 A lightweight Windows image viewer built with WPF (.NET 8), inspired by classic viewers like
-BandiView. It handles everyday image formats plus two formats most viewers skip: **PSD**
-(Photoshop) and **CLIP** (Clip Studio Paint).
+BandiView. It handles everyday image formats plus three formats most viewers skip: **PSD**
+(Photoshop), **AI** (Illustrator) and **CLIP** (Clip Studio Paint).
 
 ## Download
 
@@ -37,6 +37,9 @@ so no .NET install is required.
 - **User-chosen install location**: on first run, a small prompt lets you pick where Vista Mia
   lives (defaulting to Program Files (x86)); that choice is remembered for future launches and
   self-updates.
+- **Old versions clean themselves up**: installing a new release into a different folder removes
+  the previous install, and updates/installs clear leftover files from older multi-file builds
+  (only files Vista Mia itself ships — nothing else in the folder is touched).
 
 ## Supported formats
 
@@ -44,6 +47,7 @@ so no .NET install is required.
 |---|---|
 | PNG, JPEG, BMP, GIF, TIFF | Decoded natively via WPF |
 | PSD, WEBP, HEIC, ICO | Composited via [Magick.NET](https://github.com/dlemstra/Magick.NET) |
+| AI (Illustrator) | The file's embedded PDF stream is rendered with Windows' built-in PDF renderer (`Windows.Data.Pdf`) — see [`AiPreviewReader`](ImageViewer/Services/AiPreviewReader.cs). Needs the default "Create PDF Compatible File" option; very old PostScript-only `.ai` files have no preview |
 | CLIP (Clip Studio Paint) | The embedded canvas preview PNG is extracted directly from the file's internal SQLite chunk — see [`ClipThumbnailReader`](ImageViewer/Services/ClipThumbnailReader.cs) |
 
 ### How CLIP preview extraction works
@@ -93,6 +97,8 @@ ImageViewer/
   Services/
     ImageLoader.cs               Format dispatch (native / Magick.NET / CLIP)
     ClipThumbnailReader.cs       CLIP chunk parsing + embedded PNG extraction
+    AiPreviewReader.cs           Illustrator (.ai) preview via the embedded PDF stream
+    OldVersionCleaner.cs         Removes stale files / the previous install folder after an install or update
     ImagePanZoomController.cs    Shared zoom/pan/fit-to-window logic
     ImageDimensionReader.cs      Header-only pixel size / DPI reads for display
     ImageResizer.cs              px/cm/mm → pixel conversion + the actual resize
